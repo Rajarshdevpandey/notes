@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Note Genius – AI Study Notes Generator</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --accent: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- Login Page --- */
+        #login-page {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at top right, #1e1b4b, #0f172a);
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo-icon {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-dim);
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: white;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        /* --- Dashboard --- */
+        #dashboard {
+            display: none;
+            flex: 1;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 5%;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .main-container {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .upload-section {
+            background: var(--card-bg);
+            border: 2px dashed #334155;
+            border-radius: 1rem;
+            padding: 3rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-section:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        /* --- Results Grid --- */
+        .results-grid {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .full-width { grid-column: 1 / -1; }
+
+        .card h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .list-item {
+            margin-bottom: 0.75rem;
+            padding-left: 1.25rem;
+            position: relative;
+        }
+
+        .list-item::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+        }
+
+        /* --- Flashcards --- */
+        .flashcard-container {
+            display: flex;
+            overflow-x: auto;
+            gap: 1rem;
+            padding: 1rem 0;
+            scrollbar-width: thin;
+        }
+
+        .flashcard {
+            min-width: 250px;
+            height: 150px;
+            background: linear-gradient(135deg, #312e81, #1e1b4b);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1rem;
+            cursor: pointer;
+            transition: transform 0.3s;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .flashcard:hover { transform: translateY(-5px); }
+
+        /* --- Loading Animation --- */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* --- Professional Footer --- */
+        footer {
+            background: #070b14;
+            padding: 2rem 5%;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            text-align: center;
+            width: 100%;
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .team-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 768px) {
+            .results-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-page">
+        <div class="login-card">
+            <div class="logo-section">
+                <i data-lucide="brain-circuit" class="logo-icon" width="48" height="48"></i>
+                <h1 style="font-size: 1.5rem;">Note Genius</h1>
+                <p style="color: var(--text-dim); font-size: 0.875rem;">AI-Powered Study Assistant</p>
+            </div>
+            <form onsubmit="handleLogin(event)">
+                <div class="input-group">
+                    <label>Username</label>
+                    <input type="text" id="username" placeholder="Enter username..." required>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-primary">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboard">
+        <nav>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <i data-lucide="brain-circuit" color="#6366f1"></i>
+                <span style="font-weight: 700; letter-spacing: 0.5px;">NOTE GENIUS</span>
+            </div>
+            <button onclick="logout()" style="background: none; border: 1px solid #334155; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">Logout</button>
+        </nav>
+
+        <div class="main-container">
+            <header style="margin-bottom: 2rem;">
+                <h2 id="welcome-msg">Welcome back!</h2>
+                <p style="color: var(--text-dim);">Upload your lecture notes or textbooks to generate AI insights.</p>
+            </header>
+
+            <div class="upload-section" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                <i data-lucide="file-up" width="48" height="48" style="color: var(--primary); margin-bottom: 1rem;"></i>
+                <h3>Upload PDF Document</h3>
+                <p style="color: var(--text-dim); margin-bottom: 1.5rem;">Drag and drop or click to browse</p>
+                <input type="file" id="file-input" hidden accept="application/pdf" onchange="handleFileUpload()">
+                <button class="btn-primary" style="width: auto; padding: 0.75rem 2rem;">Select File</button>
+            </div>
+
+            <div class="loading" id="loader">
+                <div class="spinner"></div>
+                <p>Note Genius AI is analyzing your document...</p>
+            </div>
+
+            <div class="results-grid" id="results">
+                <div class="card full-width">
+                    <h3><i data-lucide="align-left"></i> Executive Summary</h3>
+                    <p id="summary-text" style="color: var(--text-dim);"></p>
+                </div>
+
+                <div class="card">
+                    <h3><i data-lucide="list-checks"></i> Key Takeaways</h3>
+                    <div id="key-points"></div>
+                </div>
+
+                <div class="card">
+                    <h3><i data-lucide="function-square"></i> Formulas & Definitions</h3>
+                    <div id="formulas"></div>
+                </div>
+
+                <div class="card full-width">
+                    <h3><i data-lucide="layers"></i> Revision Flashcards</h3>
+                    <div class="flashcard-container" id="flashcards"></div>
+                </div>
+
+                <div class="card full-width">
+                    <h3><i data-lucide="help-circle"></i> Self-Assessment Quiz</h3>
+                    <div id="quiz-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="footer-content">
+                <div class="team-badge">
+                    <i data-lucide="users" width="14"></i> Team: Note Genius
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0.5rem;">
+                    Hackathon Prototype v1.0 | <a href="mailto:prajarshdev@gmail.com" style="color: var(--primary); text-decoration: none;">prajarshdev@gmail.com</a>
+                </p>
+                <p style="font-size: 0.75rem; color: #475569;">© 2026 Note Genius AI. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('username').value;
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('welcome-msg').innerText = `Welcome, ${user}!`;
+            lucide.createIcons(); // Refresh icons for dashboard
+        }
+
+        function logout() {
+            location.reload();
+        }
+
+        function handleFileUpload() {
+            const fileInput = document.getElementById('file-input');
+            if (fileInput.files.length === 0) return;
+
+            document.getElementById('drop-zone').style.display = 'none';
+            document.getElementById('loader').style.display = 'block';
+
+            setTimeout(() => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('results').style.display = 'grid';
+                generateMockData(fileInput.files[0].name);
+                lucide.createIcons(); // Ensure results icons render
+            }, 2500);
+        }
+
+        function generateMockData(fileName) {
+            document.getElementById('summary-text').innerText = `Analysis complete for "${fileName}". The AI has identified complex patterns and synthesized the core educational objectives into a structured format for accelerated learning.`;
+
+            const points = [
+                "Advanced data extraction techniques for academic PDFs.",
+                "Automated identification of semantic relationships in text.",
+                "Optimization of study schedules using summary metadata.",
+                "Critical evaluation of primary sources vs. secondary data."
+            ];
+            document.getElementById('key-points').innerHTML = points.map(p => `<div class="list-item">${p}</div>`).join('');
+
+            const formulas = [
+                "**Retention Rate (R)** = e^(-t/S) [Where S is strength of memory]",
+                "**The Feynman Technique:** Teach it to a child to master it.",
+                "**Pareto Principle:** 20% of content drives 80% of exam results."
+            ];
+            document.getElementById('formulas').innerHTML = formulas.map(f => `<div class="list-item" style="font-family: monospace; background: #0f172a; padding: 8px; border-radius: 6px; margin-bottom: 5px; border: 1px solid rgba(255,255,255,0.05);">${f}</div>`).join('');
+
+            const cards = ["What is the main thesis?", "Define 'Systemic Efficiency'.", "Flashcard: Key Date?", "Methodology used?", "Conclusion summary?"];
+            document.getElementById('flashcards').innerHTML = cards.map(c => `<div class="flashcard">${c}</div>`).join('');
+
+            const quiz = [
+                "1. Identify the primary catalyst mentioned in the intro.",
+                "2. Contrast the two main theories presented in Section 2.",
+                "3. What is the mathematical significance of the 'Genius' constant?",
+                "4. True/False: The AI summary covers all 5 chapters.",
+                "5. What is the author's final recommendation for students?"
+            ];
+            document.getElementById('quiz-container').innerHTML = quiz.map(q => `<p style="margin-bottom: 1rem; padding: 12px; border-left: 4px solid var(--primary); background: rgba(255,255,255,0.03); border-radius: 0 8px 8px 0;">${q}</p>`).join('');
+        }
+    </script>
+</body>
+</html>
